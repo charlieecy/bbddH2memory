@@ -1,1 +1,1 @@
-Primer ejercicio de base de datos con programación
+Primer ejercicio para practicar programación con bases de datos.
