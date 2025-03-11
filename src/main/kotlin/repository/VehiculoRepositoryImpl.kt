@@ -5,9 +5,14 @@ import org.lighthousegames.logging.logging
 import java.sql.DriverManager
 import java.sql.Statement
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 
 class VehiculoRepositoryImpl: VehiculoRepository {
+    //Url para crear database h2 en memoria
+    //OJO, le damos un nombre "miPrimeraBBDD" y ponemos ";DB_CLOSE_DELAY=-1" porque, como estamos trabajando con una base
+    //en memoria, por defecto, se borraría toda la BBDD cada vez que cerremos la conexión. Con ello, conseguimos que la
+    //BBDD se borre una vez que la JVM para, o sea, cuando finaliza nuestro programa.
     private val h2databaseInMemoryURL = "jdbc:h2:mem:miPrimeraBBDD;DB_CLOSE_DELAY=-1"
     private val logger = logging()
 
@@ -44,8 +49,10 @@ class VehiculoRepositoryImpl: VehiculoRepository {
 
         //Ejecutamos el statement con los parámetros ya pasados, es decir, lo GUARDAMOS EN LA BASE DE DATOS
         val result = statement.executeUpdate()
-        //result debería imprimir 1 si se ha insertado correctamente
-        println("Nº de filas modificadas por la inserción: $result")
+
+        if(result == 1){
+            println("¡Vehículo guardado con éxito!")
+        }
 
 
         val generatedKeys = statement.generatedKeys
@@ -80,12 +87,124 @@ class VehiculoRepositoryImpl: VehiculoRepository {
     }
 
     override fun delete(id: Long): Vehiculo? {
-        TODO()
+        logger.debug { "Eliminando vehículo" }
 
+        //Creamos el vehículo (o nulo) que vamos a devolver en la función. Lo buscamos en la propia base de datos,
+        // para saber si existe antes de intentar eliminarlo
+        val vehiculo: Vehiculo? = getById(id)
+
+        if (vehiculo != null) {
+            //Abrimos conexión
+            val connection = DriverManager.getConnection(h2databaseInMemoryURL)
+            //Comprobamos si tenemos conexión
+            if (connection == null) {
+                println("NO se ha podido conectar")
+            } else {
+                println("¡Conexión establecida!")
+            }
+
+            //Creamos el borrado en SQL
+            val sql = """DELETE FROM vehiculos WHERE id = ?"""
+
+            //Creamos el statement
+            val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+
+            //Asignamos el valor al parámetro (?). Al solo haber 1, es el índice 1 sí o sí
+            statement.setLong(1, id)
+
+            //Ejecutamos el statement, tomará el valor del número de filas de la tabla a las que afecte la consulta
+            val resultSet = statement.executeUpdate()
+
+            if (resultSet == 1) {
+                println("Vehículo con id $id borrado con éxito")
+            }
+
+            //Cerramos conexión
+            connection.close()
+            //Comprobamos si se ha cerrado
+            if (connection.isClosed) {
+                println("¡Conexión cerrada con éxito!")
+            } else {
+                println("La conexión sigue abierta...")
+            }
+
+        } else {
+            println("No se ha podido borrar el vehículo con id $id porque no existe")
+        }
+
+        return vehiculo
     }
 
     override fun update(id: Long, entity: Vehiculo): Vehiculo? {
-        TODO()
+        logger.debug { "Actualizando vehículo con id $id" }
+
+        //Creamos el vehículo (o nulo) que vamos a devolver en la función. Lo buscamos en la propia base de datos,
+        // para saber si existe antes de intentar eliminarlo
+        var vehiculo: Vehiculo? = getById(id)
+
+        if (vehiculo != null) {
+
+            //Fecha del día de hoy
+            val timeStamp = LocalDate.now()
+
+            //Abrimos conexión
+            val connection = DriverManager.getConnection(h2databaseInMemoryURL)
+            //Comprobamos si tenemos conexión
+            if (connection == null) {
+                println("NO se ha podido conectar")
+            } else {
+                println("¡Conexión establecida!")
+            }
+
+            //Creamos el update en SQL
+            val sql = """UPDATE vehiculos
+                |SET matricula = ?,
+                |marca = ?,
+                |modelo = ?,
+                |fechaMatriculacion = ?,
+                |permisoActivo = ?,
+                |tipo = ?
+                |WHERE id = ?
+            """.trimMargin()
+
+            //Preparamos el statement
+            val statement = connection.prepareStatement(sql)
+
+            //Asignamos el valor a actualizar, en este caso nuetra función update va a cambiar la fecha
+            //de matriculación al día actual
+            statement.setString(1, entity.matricula)
+            statement.setString(2, entity.marca)
+            statement.setString(3, entity.modelo)
+            statement.setString(4, timeStamp.toString())
+            statement.setBoolean(5, entity.permisoActivo)
+            statement.setString(6, entity.tipo.toString())
+            statement.setLong(7, id)
+
+            //Ejecutamos el statement
+            val result = statement.executeUpdate()
+
+            if (result == 1) {
+                println("¡Vehículo con id $id actualizado con éxito!")
+            }
+
+            vehiculo = vehiculo.copy(
+                fechaMatriculacion = timeStamp
+            )
+
+            //Cerramos conexión
+            connection.close()
+            //Comprobamos si se ha cerrado
+            if (connection.isClosed) {
+                println("¡Conexión cerrada con éxito!")
+            } else {
+                println("La conexión sigue abierta...")
+            }
+
+        } else {
+            println("No se ha podido actualizar el vehículo con id $id porque no existe")
+        }
+
+        return vehiculo
     }
 
     override fun getAll(): List<Vehiculo> {
@@ -169,12 +288,12 @@ class VehiculoRepositoryImpl: VehiculoRepository {
         statement.setLong(1, id)
 
         //Ejecutamos el statement
-        val resultSet = connection.createStatement().executeQuery(sql)
+        val resultSet = statement.executeQuery()
 
         //Vamos recorriendo las filas del resultado de la consulta con next, mientras que los índices son las columnas
         //donde se encuentra la info de cada campo, rescatamos el valor correspondiente y lo parseamos a los tipos de datos
         //de nuestro modelo de vehículo
-        while (resultSet.next()) {
+        if (resultSet.next()) {
             vehiculo = Vehiculo(
                 id = resultSet.getLong(1),
                 matricula = resultSet.getString(2),
@@ -184,6 +303,18 @@ class VehiculoRepositoryImpl: VehiculoRepository {
                 permisoActivo = resultSet.getBoolean(6),
                 tipo = Vehiculo.Tipo.valueOf(resultSet.getString(7))
             )
+            println("¡Vehículo con id $id encontrado con éxito!")
+        } else {
+            println("Vehículo con id $id no encontrado.")
+        }
+
+        //Cerramos conexión
+        connection.close()
+        //Comprobamos si se ha cerrado
+        if (connection.isClosed) {
+            println("¡Conexión cerrada con éxito!")
+        } else {
+            println("La conexión sigue abierta...")
         }
 
         return vehiculo

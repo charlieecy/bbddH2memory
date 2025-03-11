@@ -49,6 +49,8 @@ fun main() {
         println("La conexión sigue abierta...")
     }
 
+    println()
+
     val v1 = Vehiculo(
         matricula = "4422KJM",
         marca = "Ford",
@@ -81,92 +83,32 @@ fun main() {
     repository.save(v2)
     repository.save(v3)
 
+    println()
 
     //Obtenemos todos los vehículos
     repository.getAll().forEach { println(it) }
 
-    //Buscamos por id
-    repository.getById(3)
+    println()
 
+    //Buscamos por id (existe)
+    println(repository.getById(3))
+    println()
+    //Buscamos por id (no existe)
+    println(repository.getById(4))
 
+    println()
 
+    //Borramos por id (existe)
+    println(repository.delete(1))
+    repository.getAll().forEach { println(it) }
+    println()
+    //Borramos por id (no existe)
+    println(repository.delete(4))
 
-    /*val repository = VehiculoRepositoryImpl()
+    println()
 
+    //Actualizamos vehículo
+    println(repository.update(3, v3))
 
-
-    val v2 = Vehiculo(
-        matricula = "5572JKB",
-        marca = "Toyota",
-        modelo = "Prius",
-        fechaMatriculacion = LocalDate.of(2022, 8, 25),
-        permisoActivo = true,
-        tipo = Vehiculo.Tipo.ELECTRICO
-    )
-
-    val v3 = Vehiculo(
-        matricula = "1234ABC",
-        marca = "Ford",
-        modelo = "Focus",
-        fechaMatriculacion = LocalDate.of(2020, 5, 14),
-        permisoActivo = true,
-        tipo = Vehiculo.Tipo.HIBRIDO
-    )
-
-    val v4 = Vehiculo(
-        matricula = "5572JKB",
-        marca = "Toyota",
-        modelo = "Prius",
-        fechaMatriculacion = LocalDate.of(2022, 8, 25),
-        permisoActivo = true,
-        tipo = Vehiculo.Tipo.ELECTRICO
-    )
-
-    val v5 = Vehiculo(
-        matricula = "9876XYZ",
-        marca = "Tesla",
-        modelo = "Model 3",
-        fechaMatriculacion = LocalDate.of(2023, 2, 10),
-        permisoActivo = false,
-        tipo = Vehiculo.Tipo.ELECTRICO
-    )
-
-    val v6 = Vehiculo(
-        matricula = "6543LMN",
-        marca = "Honda",
-        modelo = "Civic",
-        fechaMatriculacion = LocalDate.of(2018, 11, 3),
-        permisoActivo = true,
-        tipo = Vehiculo.Tipo.COMBUSTION
-    )
-
-    val v7 = Vehiculo(
-        matricula = "3210PQR",
-        marca = "BMW",
-        modelo = "X5",
-        fechaMatriculacion = LocalDate.of(2019, 7, 22),
-        permisoActivo = false,
-        tipo = Vehiculo.Tipo.HIBRIDO
-    )
-
-    val v8 = Vehiculo(
-        matricula = "7412DEF",
-        marca = "Mercedes",
-        modelo = "GLA",
-        fechaMatriculacion = LocalDate.of(2021, 9, 15),
-        permisoActivo = true,
-        tipo = Vehiculo.Tipo.COMBUSTION
-    )
-
-    repository.save(v1)
-    repository.save(v2)
-    repository.save(v3)
-    repository.save(v4)
-    repository.save(v5)
-    repository.save(v6)
-    repository.save(v7)
-    repository.save(v8)
-
-    repository.getAll().forEach { println(it) }*/
 
 }
