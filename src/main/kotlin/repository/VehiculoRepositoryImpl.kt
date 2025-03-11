@@ -107,7 +107,7 @@ class VehiculoRepositoryImpl: VehiculoRepository {
             val sql = """DELETE FROM vehiculos WHERE id = ?"""
 
             //Creamos el statement
-            val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+            val statement = connection.prepareStatement(sql)
 
             //Asignamos el valor al parámetro (?). Al solo haber 1, es el índice 1 sí o sí
             statement.setLong(1, id)
